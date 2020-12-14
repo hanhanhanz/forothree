@@ -1,0 +1,17 @@
+X-Real-IP:127.0.0.1
+X-Forwarded-For:127.0.0.1
+X-Custom-IP-Authorization:127.0.0.1
+X-Client-IP:127.0.0.1
+True-Client-IP:127.0.0.1
+CF-Connecting-IP:127.0.0.1
+X-Cluster-Client-IP:127.0.0.1
+Fastly-Client-IP:127.0.0.1
+X-Originating-IP:127.0.0.1
+X-Forwarded-For:127.0.0.1
+X-Remote-IP:127.0.0.1
+X-Remote-Addr:127.0.0.1
+X-Client-IP:127.0.0.1
+X-Host:127.0.0.1
+X-Forwarded-Host:127.0.0.1
+X-Forwarded-Proto:127.0.0.1
+X-Forwarded-By:127.0.0.1
