@@ -33,6 +33,7 @@ type rawconf struct {
 	Headby bool
 	Rec bool
 	Xheaders bool
+	Location bool
 }
 
 func Find(slice []string, val string) (int, bool) { //check if value exist in slice
@@ -238,6 +239,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	
 
 	lengtho := ""
+	locationo := ""
 	xheaderso := ""
 	
 	if r.Bodylen {
@@ -248,11 +250,19 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	if r.Xheaders {
 		xheaderso = fmt.Sprintf("xtra-header : %v |",r.Headers[len(r.Headers)-1])
 	}
+
+	if r.Location {
+		a := resp.Header
+		b := string(a.Peek("Location"))
+		if b != "" {
+			locationo = fmt.Sprintf("location : %v |",)	
+		}
+	}
 	
 	_, found := Find(r.Scode,codeocheck) //statuscode filter
 	
 	if found{
-		fmt.Println(domaino + codeo + lengtho + xheaderso)
+		fmt.Println(domaino + codeo + lengtho + locationo + xheaderso)
 	}
 
 	if r.Outname != ""{
@@ -401,6 +411,7 @@ func main() {
     flag.StringVar(&(r.Urlf),"ul",""," url list target")
     flag.StringVar(&(r.Outname),"o",""," specify output file name")
     flag.BoolVar(&(r.Headby),"b",false," disable header bypass")
+    flag.BoolVar(&(r.Location),"hl",false," show header location")
     flag.BoolVar(&(r.Rec),"c",false," disable recursive bypass")
     r.Xheaders = false
     flag.Parse()
