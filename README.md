@@ -26,12 +26,14 @@ $ ./forothree
 ### Usage
 
 ```sh
-$ ./forothree.go -h
-Usage of /forothree.:
+$ ./forothree -h
+Usage of /tmp/go-build145687935/b001/exe/forothree:
   -b     disable header bypass
   -c     disable recursive bypass
   -e string
          set custom headers, ex head1:myhead,head2:yourhead (default "Connection:close")
+  -hl
+         show header location
   -l     show response length
   -m string
          set request method (default "GET")
@@ -40,20 +42,21 @@ Usage of /forothree.:
   -r int
          set max number of retries (default 2)
   -s string
-        -s specify status code, ex 200,404 (default "200,404,403")
+        -s specify status code, ex 200,404 (default "200,404,403,301,404")
   -t int
          specify request timeout in seconds (default 3)
   -u string
          url target
   -ul string
          url list target
+
 ```
 
 
 
 ### Example
 ```sh
-$ go run forothree.go -u http://scanme.nmap.org/adminpage.php
+$ ./forothree -u http://scanme.nmap.org/adminpage.php
 domain : http://scanme.nmap.org/adminpage.php |code : 404 |
 domain : http://scanme.nmap.org/.;adminpage.php |code : 404 |
 domain : http://scanme.nmap.org/Adminpage.php |code : 404 |
