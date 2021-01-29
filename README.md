@@ -54,7 +54,7 @@ Usage of /tmp/go-build145687935/b001/exe/forothree:
 
 
 
-### Example
+### Example for single directory URL
 ```sh
 $ ./forothree -u http://scanme.nmap.org/adminpage.php
 domain : http://scanme.nmap.org/adminpage.php |code : 404 |
@@ -99,4 +99,63 @@ domain : http://scanme.nmap.org/adminpage.php |code : 404 |xtra-header : X-Forwa
 domain : http://scanme.nmap.org/adminpage.php |code : 404 |xtra-header : X-Remote-Addr:127.0.0.1 |
 domain : http://scanme.nmap.org/adminpage.php |code : 404 |xtra-header : X-Forwarded-By:127.0.0.1 |
 domain : http://scanme.nmap.org/adminpage.php |code : 404 |xtra-header : X-Forwarded-Proto:127.0.0.1 |
+```
+
+### Example for multiple directory URL
+```sh
+$ ./forothree -u http://scanme.nmap.org/dir1/dir2/adminpage.php
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/%2e/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php# |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/.;adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/\..\.\adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php//google.com |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php%20 |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php?? |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php//dir@evil.com |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php%2500 |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php/~ |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php..;/ |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php/..;/ |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php// |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php%09 |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php/. |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/..;/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/./adminpage.php/./ |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php? |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/.;/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php.json |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/Adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2//adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php/~ |code : 404 |
+domain : http://scanme.nmap.org//dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/%2e/dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php..;/ |code : 404 |
+domain : http://scanme.nmap.org/..;/dir1/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Host:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : True-Client-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Original-URL:/dir2/adminpage.php |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php..;/ |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Originating-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Real-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Custom-IP-Authorization:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Client-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/%2e/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Forwarded-For:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Client-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Forwarded-For:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1//dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Forwarded-By:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Forwarded-Host:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Rewrite:/dir2/adminpage.php |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Forwarded-Proto:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Remote-Addr:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : Fastly-Client-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Cluster-Client-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : CF-Connecting-IP:127.0.0.1 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php/~ |code : 404 |
+domain : http://scanme.nmap.org/dir1/..;/dir2/adminpage.php |code : 404 |
+domain : http://scanme.nmap.org/dir1/dir2/adminpage.php |code : 404 |xtra-header : X-Remote-IP:127.0.0.1 |
 ```
