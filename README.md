@@ -70,6 +70,7 @@ domain : http://scanme.nmap.org/adminpage.php%2500 |code : 404 |
 domain : http://scanme.nmap.org/\..\.\adminpage.php |code : 404 |
 domain : http://scanme.nmap.org/adminpage.php? |code : 404 |
 domain : http://scanme.nmap.org/adminpage.php?? |code : 404 |
+domain : http://scanme.nmap.org./adminpage.php |code : 404 |
 domain : http://scanme.nmap.org/adminpage.php%09 |code : 404 |
 domain : http://scanme.nmap.org/adminpage.php/..;/ |code : 404 |
 domain : http://scanme.nmap.org/adminpage.php..;/ |code : 404 |
