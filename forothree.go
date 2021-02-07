@@ -34,7 +34,6 @@ type rawconf struct {
 	Rec bool
 	Xheaders bool
 	Location bool
-	Domainmod string
 }
 
 func Find(slice []string, val string) (int, bool) { //check if value exist in slice
@@ -340,7 +339,8 @@ func payloads2(r rawconf, dir string) {
 	}()
 	
 	
-
+	go myrequest(r,dir,"DOMAINMOD",".",&wg)
+	go myrequest(r,dir,"%2" + "e/","",&wg)
 	go myrequest(r,dir,"%2" + "e/","",&wg) //LOOP?
 	go myrequest(r,dir,"","..;/",&wg) // LOOP?
 	go myrequest(r,dir,"..;/","",&wg) //and ../ LOOP? 
