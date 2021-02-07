@@ -34,6 +34,7 @@ type rawconf struct {
 	Rec bool
 	Xheaders bool
 	Location bool
+	Domainmod string
 }
 
 func Find(slice []string, val string) (int, bool) { //check if value exist in slice
@@ -183,7 +184,15 @@ func parseurldirs (urlz string) (string,[]string) { //parse url with subdirector
 func myrequest(r rawconf, dir string, before string, after string, wg *sync.WaitGroup) { //request engine
 
 	//prepare url
-	url := r.Url+before+dir+after
+	url := ""
+	if before != "DOMAINMOD" {
+
+		url = r.Url+before+dir+after
+	} else {
+		r.Url = r.Url[:len(r.Url)-1]
+		url = r.Url + after + "/" + dir
+	}
+	
 	wg.Add(1)
 
 	//prepare request
@@ -284,7 +293,9 @@ func payloads(r rawconf, dir string) {
 		
 	}()
 	
-	//22 goroutine total
+	
+	//23 goroutine total
+	go myrequest(r,dir,"DOMAINMOD",".",&wg)
 	go myrequest(r,dir,"","%2500",&wg)
 	go myrequest(r,dir,"","%20",&wg)
 	go myrequest(r,dir,"%2" + "e/","",&wg) 
@@ -318,7 +329,7 @@ func payloads(r rawconf, dir string) {
 
 func payloads2(r rawconf, dir string) {
 
-	 var wg sync.WaitGroup
+	var wg sync.WaitGroup
  	
 	myrequest(r,dir,"","",&wg)
 	
@@ -475,7 +486,7 @@ func main() {
 
 
     for g2.Scan() {                                                                                              
-        var line = g2.Text()
+        var line = g2.Text()	
         
 
 
