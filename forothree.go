@@ -340,7 +340,6 @@ func payloads2(r rawconf, dir string) {
 	
 	
 	go myrequest(r,dir,"DOMAINMOD",".",&wg)
-	go myrequest(r,dir,"%2" + "e/","",&wg)
 	go myrequest(r,dir,"%2" + "e/","",&wg) //LOOP?
 	go myrequest(r,dir,"","..;/",&wg) // LOOP?
 	go myrequest(r,dir,"..;/","",&wg) //and ../ LOOP? 
