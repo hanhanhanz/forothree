@@ -503,7 +503,7 @@ func main() {
         	payloads(r,last)
         	
         	if !(r.Rec) {
-	        	for i := 0; i < len(dirs)-1; i++ {        		
+	        	for i := 0; i < len(dirs)-1; i++ {   // -1 for keeptesting all level of directory excluding file destination      		
 	        		
 	        		middle = strings.Join(dirs[0:i], "/")
 	        		last = strings.Join(dirs[i:len(dirs)], "/") //?
