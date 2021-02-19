@@ -1,7 +1,7 @@
 # Forothree
 
 
-Tools for bypassing 403 pages with build-in alteration and adding headers. Payload mostly generated based on multiple 403 bypass i found in twitter. Created using Go with Fasthttp module
+Tool for bypassing 403 pages with build-in alteration and adding headers. Payload mostly generated based on multiple 403 bypass i found in twitter. Created using Go with Fasthttp module. Feed it with multiple 403 URL and enjoy the show
 
 ## Features
   - Build in Concurrency
