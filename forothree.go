@@ -36,6 +36,15 @@ type rawconf struct {
 	Location bool
 }
 
+func firstchartoasciicode(s string) (string) {
+	rest := fmt.Sprintf(s[1:])
+	tem := []rune(s)
+	temp := tem[0]
+	temp2 := int(temp)
+	first := strconv.Itoa(temp2)
+	return fmt.Sprintf("%s%s%s","%",first,rest)
+}
+
 func Find(slice []string, val string) (int, bool) { //check if value exist in slice
     for i, item := range slice {
         if item == val {
@@ -316,6 +325,7 @@ func payloads(r rawconf, dir string) {
 	go myrequest(r,dir,"","#",&wg)
 	go myrequest(r,dir,".;","",&wg)
 	go myrequest(r,dir,"","/~",&wg)
+	go myrequest(r,firstchartoasciicode(dir),"","",&wg)
 	
 	if strtoreversecase(dir) != "" {
 		
@@ -344,7 +354,8 @@ func payloads2(r rawconf, dir string) {
 	go myrequest(r,dir,"","..;/",&wg) // LOOP?
 	go myrequest(r,dir,"..;/","",&wg) //and ../ LOOP? 
 	go myrequest(r,dir,"/","",&wg) // / LOOP?
-	go myrequest(r,dir,"","/~",&wg) // /%61dmin not added yet and not change the method yet
+	go myrequest(r,dir,"","/~",&wg) 
+	go myrequest(r,dir,"./","",&wg)
 }
 
 func payloads3(r rawconf, dir string) { 
