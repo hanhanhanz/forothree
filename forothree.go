@@ -325,6 +325,7 @@ func payloads(r rawconf, dir string) {
 	go myrequest(r,dir,"","#",&wg)
 	go myrequest(r,dir,".;","",&wg)
 	go myrequest(r,dir,"","/~",&wg)
+	go myrequest(r,dir,"./","",&wg)
 	go myrequest(r,firstchartoasciicode(dir),"","",&wg)
 	
 	if strtoreversecase(dir) != "" {
@@ -356,6 +357,7 @@ func payloads2(r rawconf, dir string) {
 	go myrequest(r,dir,"/","",&wg) // / LOOP?
 	go myrequest(r,dir,"","/~",&wg) 
 	go myrequest(r,dir,"./","",&wg)
+	go myrequest(r,firstchartoasciicode(dir),"","",&wg)
 }
 
 func payloads3(r rawconf, dir string) { 
