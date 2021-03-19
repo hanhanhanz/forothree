@@ -397,14 +397,14 @@ func payloads3(r rawconf, dir string) {
     
     go func() {
 		r.Headers = append(r.Headers,"X-Rewrite:/"+dir)
-		myrequest(r,dir,"","",&wg) //LOOP?
+		myrequest(r,"","","",&wg) //LOOP?
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]	
 		}
 	}()
 
 	r.Headers = append(r.Headers,"X-Original-URL:/"+dir)	
-	myrequest(r,dir,"","",&wg)
+	myrequest(r,"sabeb","","",&wg)
 	if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 		r.Headers = r.Headers[:len(r.Headers)-1]
 	}
