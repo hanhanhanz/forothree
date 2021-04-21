@@ -13,6 +13,8 @@ import "flag"
 import "io/ioutil"
 import "unicode"
 import "regexp"
+import "github.com/dchest/uniuri"
+
 
 
 //forothree v.0.1
@@ -34,6 +36,13 @@ type rawconf struct {
 	Rec bool
 	Xheaders bool
 	Location bool
+}
+
+func lastchartoasciicodeonly(s string) (int) {
+	tem := []rune(s)
+	temp := tem[len(s)-1]
+	first := int(temp)
+	return first
 }
 
 func firstchartoasciicode(s string) (string) {
@@ -188,17 +197,29 @@ func parseurldirs (urlz string) (string,[]string) { //parse url with subdirector
 	return domain, dir
 }
 
+func reqiterateheader(r rawconf,dir string,wg sync.WaitGroup,lol []string,i int) {
+
+	    		headerstemp := r.Headers
+	    		r.Headers = append(r.Headers,lol[i])
+				myrequest(r,dir,"","",&wg)
+				//if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
+				//	r.Headers = r.Headers[:len(r.Headers)-1]		
+				//}
+				r.Headers = headerstemp 
+}
 
 func myrequest(r rawconf, dir string, before string, after string, wg *sync.WaitGroup) { //request engine
 
 	//prepare url
 	url := ""
-	if before != "DOMAINMOD" {
-
-		url = r.Url+before+dir+after
-	} else {
+	if (before == "DOMAINMOD") { //url exception for bypass that modify domain
 		r.Url = r.Url[:len(r.Url)-1]
 		url = r.Url + after + "/" + dir
+		
+	} else if strings.HasPrefix(before, "DIRMOD") { //url exception for bypass that modify admin to %97dmin. coz special behavior in golang len() function
+		url = r.Url+""+dir+after
+	} else {
+		url = r.Url+before+dir+after
 	}
 	
 	wg.Add(1)
@@ -229,6 +250,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	var tout = time.Duration(r.Timeout) * time.Second
 	
 	//do request, break if not timeout, still 
+	timeout := false
 	for true {
 		var err = fasthttp.DoTimeout(req, resp, tout)
 		
@@ -236,10 +258,11 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 		//print error, code still redundant/inefficient
 		if err != nil {
 			
-			if err.Error() == "timeout" {
-				fmt.Printf("domain : %s |error : %s%s",url,err,"\n")
-				r.Retnum--
+			if err.Error() == "timeout" { 
+			r.Retnum--
 				if r.Retnum == 0 {
+					//fmt.Printf("domain : %s |error : %s%s",url,err,"\n") //NEED TO ADD PADDING
+					timeout = true //request is timeout
 					break
 				}
 			}
@@ -249,7 +272,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	}
 
 	//print output
-	domaino := fmt.Sprintf("domain : %s |",url)
+	domaino := fmt.Sprintf("domain : %s ",url)
 	codeo := fmt.Sprintf("code : " + strconv.Itoa(resp.StatusCode()) + " |") //no filter status code yet
 	re := regexp.MustCompile("[0-9]+")
 	codeocheck := strings.Join(re.FindAllString(codeo,-1),"") //to get raw number of status code, used to determine whether to print it 
@@ -258,6 +281,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	lengtho := ""
 	locationo := ""
 	xheaderso := ""
+	paddingo := 0
 	
 	if r.Bodylen {
 		t := resp.String()
@@ -278,16 +302,47 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	
 	_, found := Find(r.Scode,codeocheck) //statuscode filter
 	
-	if found{
-		fmt.Println(domaino + codeo + lengtho + locationo + xheaderso)
-	}
-
-	if r.Outname != ""{
-		if found{
-			storehere(domaino + codeo + lengtho + xheaderso + "\n",r.Outfile)	
-		}
-	}
 	
+
+	//PADDING LOGIC
+	//============================================================================================
+	//add extra padding if domain is example.com.
+	if before == "DOMAINMOD"  {
+		paddingo = ((len(r.Url)+len(dir)+30) - (len(domaino)) + 1 )
+	//add extra padding if firstchartoasciicode used
+	} else if strings.HasPrefix(before, "DIRMOD") {
+		if lastchartoasciicodeonly(before) < 100 {
+			paddingo = (len(r.Url)+len(dir)+30) - (len(domaino)) - 2
+			/*fmt.Println("LESS")
+			fmt.Println(lastchartoasciicodeonly(before))
+			fmt.Println(before)*/
+		} else {
+			paddingo = (len(r.Url)+len(dir)+30) - (len(domaino)) - 3
+			/*fmt.Println("MORE")
+			fmt.Println(lastchartoasciicodeonly(before))
+			fmt.Println(before)*/
+		}
+	} else {
+		paddingo = (len(r.Url)+len(dir)+30) - (len(domaino))
+	}
+	//add extra padding if domain is blank coz the dir is in x-rewrite
+	if strings.HasPrefix(r.Headers[len(r.Headers)-1], "X-Rewrite:/")  {
+		paddingo = paddingo+len(r.Headers[len(r.Headers)-1]) - len("X-Rewrite:/")
+	}
+	//============================================================================================
+	
+	if !(timeout) { //check if request timeout
+		if found{
+			fmt.Println(domaino + strings.Repeat(" ", paddingo)+ "|"  + codeo + lengtho + locationo + xheaderso)
+		}
+		if r.Outname != ""{
+			if found{
+				storehere(domaino + strings.Repeat(" ", paddingo)+ "|"   + codeo + lengtho + xheaderso + "\n",r.Outfile)	
+			}
+		}
+	} else {
+		fmt.Println(domaino + strings.Repeat(" ", paddingo)+ "|"  + "timeout")
+	}
 	wg.Done()
 }
 
@@ -302,7 +357,7 @@ func payloads(r rawconf, dir string) {
 	}()
 	
 	
-	//23 goroutine total
+	//25 goroutine total
 	go myrequest(r,dir,"DOMAINMOD",".",&wg)
 	go myrequest(r,dir,"","%2500",&wg)
 	go myrequest(r,dir,"","%20",&wg)
@@ -326,11 +381,13 @@ func payloads(r rawconf, dir string) {
 	go myrequest(r,dir,".;","",&wg)
 	go myrequest(r,dir,"","/~",&wg)
 	go myrequest(r,dir,"./","",&wg)
-	go myrequest(r,firstchartoasciicode(dir),"","",&wg)
 	
-	if strtoreversecase(dir) != "" {
+	if dir != "" {
+		go myrequest(r,firstchartoasciicode(dir),fmt.Sprintf("%s%s","DIRMOD",fmt.Sprintf(dir[:1])),"",&wg)	
+	}
+	if strtoreversecase(dir) != "" { 
 		
-		go myrequest(r,strtoreversecase(dir),"","",&wg)									
+		myrequest(r,strtoreversecase(dir),"","",&wg) //not in goroutine fo a nasty way to keep goroutine run w/o encountering race condition									 
 	}
 	
 
@@ -351,14 +408,18 @@ func payloads2(r rawconf, dir string) {
 	
 	
 	go myrequest(r,dir,"DOMAINMOD",".",&wg)
-	go myrequest(r,dir,"%2" + "e/","",&wg) //LOOP?
+	go myrequest(r,dir,"%2" + "e/","",&wg) 
 	go myrequest(r,dir,"","..;/",&wg) // LOOP?
 	go myrequest(r,dir,"..;/","",&wg) //and ../ LOOP? 
-	go myrequest(r,dir,"/","",&wg) // / LOOP?
+	go myrequest(r,dir,"/","",&wg) 
 	go myrequest(r,dir,"","/~",&wg) 
 	go myrequest(r,dir,"./","",&wg)
-	go myrequest(r,firstchartoasciicode(dir),"","",&wg)
+	if dir != "" {
+		myrequest(r,firstchartoasciicode(dir),fmt.Sprintf("%s%s","DIRMOD",fmt.Sprintf(dir[:1])),"",&wg)	 //not in goroutine fo a nasty way to keep goroutine run w/o encountering race condition
+	}
 }
+
+
 
 func payloads3(r rawconf, dir string) { 
 	
@@ -384,17 +445,11 @@ func payloads3(r rawconf, dir string) {
     	
     }
 
-
+    
     for i := 0; i < len(lol); i++ {
+
+	    	go reqiterateheader(r,dir,wg,lol,i)
     	
-    	go func(i int) {
-    		//defer wg.Done()
-    		r.Headers = append(r.Headers,lol[i])
-			myrequest(r,dir,"","",&wg)
-			if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
-				r.Headers = r.Headers[:len(r.Headers)-1]		
-			}
-    	}(i)    	
     }
     
     go func() {
@@ -405,11 +460,14 @@ func payloads3(r rawconf, dir string) {
 		}
 	}()
 
-	r.Headers = append(r.Headers,"X-Original-URL:/"+dir)	
-	myrequest(r,"sabeb","","",&wg)
-	if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
-		r.Headers = r.Headers[:len(r.Headers)-1]
-	}
+	go func() {
+		sabeb := uniuri.NewLen(len(dir))
+		r.Headers = append(r.Headers,"X-Original-URL:/"+dir)	
+		myrequest(r,sabeb,"","",&wg)
+		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
+			r.Headers = r.Headers[:len(r.Headers)-1]
+		}
+	}()
 
 }
 
