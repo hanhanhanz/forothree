@@ -452,22 +452,22 @@ func payloads3(r rawconf, dir string) {
     	
     }
     
-    go func() {
+    //go func() { //NOT CONCURRENT YET
 		r.Headers = append(r.Headers,"X-Rewrite:/"+dir)
 		myrequest(r,"","","",&wg) //LOOP?
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]	
 		}
-	}()
+	//}()
 
-	go func() {
+	//go func() { //NOT CONCURRENT YET
 		sabeb := uniuri.NewLen(len(dir))
 		r.Headers = append(r.Headers,"X-Original-URL:/"+dir)	
 		myrequest(r,sabeb,"","",&wg)
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]
 		}
-	}()
+	//}()
 
 }
 
