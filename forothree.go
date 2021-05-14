@@ -326,8 +326,8 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 		paddingo = (len(r.Url)+len(dir)+30) - (len(domaino))
 	}
 	//add extra padding if domain is blank coz the dir is in x-rewrite
-	if strings.HasPrefix(r.Headers[len(r.Headers)-1], "X-Rewrite:/")  {
-		paddingo = paddingo+len(r.Headers[len(r.Headers)-1]) - len("X-Rewrite:/")
+	if strings.HasPrefix(r.Headers[len(r.Headers)-1], "X-Rewrite-URL:/")  {
+		paddingo = paddingo+len(r.Headers[len(r.Headers)-1]) - len("X-Rewrite-URL:/")
 	}
 	//============================================================================================
 	
@@ -453,7 +453,7 @@ func payloads3(r rawconf, dir string) {
     }
     
     //go func() { //NOT CONCURRENT YET
-		r.Headers = append(r.Headers,"X-Rewrite:/"+dir)
+		r.Headers = append(r.Headers,"X-Rewrite-URL:/"+dir)
 		myrequest(r,"","","",&wg) //LOOP?
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]	
