@@ -36,6 +36,7 @@ type rawconf struct {
 	Rec bool
 	Xheaders bool
 	Location bool
+	Useragent string
 }
 
 func lastchartoasciicodeonly(s string) (int) {
@@ -241,7 +242,9 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 			i,j := parseHeaders(v)
 			req.Header.Add(i, j)
 		}
-	}	
+	}
+
+	req.Header.Set("User-Agent", r.Useragent)	
 
 	// define web client request Method
 	req.Header.SetMethod(r.Method)
@@ -387,7 +390,30 @@ func payloads(r rawconf, dir string) {
 	}
 	if strtoreversecase(dir) != "" { 
 		
-		myrequest(r,strtoreversecase(dir),"","",&wg) //not in goroutine fo a nasty way to keep goroutine run w/o encountering race condition									 
+		go myrequest(r,strtoreversecase(dir),"","",&wg) //not in goroutine fo a nasty way to keep goroutine run w/o encountering race condition									 
+	}
+
+	methodtemp := r.Method
+	if r.Method == "GET" {
+		r.Method = "POST"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = "TRACE"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = methodtemp
+	} else if r.Method == "POST" {
+		r.Method = "GET"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = "TRACE"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = methodtemp
+	} else {
+		r.Method = "POST"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = "GET"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = "TRACE"
+		myrequest(r,dir,"","",&wg)	
+		r.Method = methodtemp
 	}
 	
 
@@ -461,13 +487,21 @@ func payloads3(r rawconf, dir string) {
 	//}()
 
 	//go func() { //NOT CONCURRENT YET
-		sabeb := uniuri.NewLen(len(dir))
+		sabeb := uniuri.NewLen(len(dir)) //generate random string
 		r.Headers = append(r.Headers,"X-Original-URL:/"+dir)	
 		myrequest(r,sabeb,"","",&wg)
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]
 		}
 	//}()
+
+		uatemp := r.Useragent 
+		r.Useragent = "okhttp/4.1.1"
+		myrequest(r,"","","",&wg)
+		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
+			r.Headers = r.Headers[:len(r.Headers)-1]
+		}
+		r.Useragent = uatemp
 
 }
 
@@ -491,6 +525,7 @@ func main() {
     flag.StringVar(&(r.Url),"u",""," url target")
     flag.StringVar(&(r.Urlf),"ul",""," url list target")
     flag.StringVar(&(r.Outname),"o",""," specify output file name")
+    flag.StringVar(&(r.Useragent),"ua","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"," specify User-Agent")
     flag.BoolVar(&(r.Headby),"b",false," disable header bypass")
     flag.BoolVar(&(r.Location),"hl",false," show header location")
     flag.BoolVar(&(r.Rec),"c",false," disable recursive bypass")
