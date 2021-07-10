@@ -497,7 +497,7 @@ func payloads3(r rawconf, dir string) {
 
 		uatemp := r.Useragent 
 		r.Useragent = "okhttp/4.1.1"
-		myrequest(r,"","","",&wg)
+		myrequest(r,dir,"","",&wg)
 		if len(r.Headers) != 0 { //magic if to debug goroutine panic: runtime error: slice bounds out of range [:-1]
 			r.Headers = r.Headers[:len(r.Headers)-1]
 		}
