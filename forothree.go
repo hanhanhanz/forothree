@@ -275,7 +275,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	}
 
 	//print output
-	domaino := fmt.Sprintf("domain : %s ",url)
+	domaino := fmt.Sprintf("%s : %s ",r.Method,url)
 	codeo := fmt.Sprintf("code : " + strconv.Itoa(resp.StatusCode()) + " |") //no filter status code yet
 	re := regexp.MustCompile("[0-9]+")
 	codeocheck := strings.Join(re.FindAllString(codeo,-1),"") //to get raw number of status code, used to determine whether to print it 
