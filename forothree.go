@@ -14,6 +14,8 @@ import "io/ioutil"
 import "unicode"
 import "regexp"
 import "github.com/dchest/uniuri"
+//import "net/http"
+import "crypto/tls"
 
 
 
@@ -72,7 +74,7 @@ func headtorequest(r rawconf,dir string, h string,wg sync.WaitGroup) {
 
 func storehere(d string, f *(os.File) ) { //store result (in string) to file
 	if _, err := f.WriteString(d); err != nil {
-		fmt.Printf("[-]storing function error :  ")
+		fmt.Printf("[-] storing function error :  ")
 		panic(err)
 	}
 	
@@ -135,22 +137,25 @@ func parseHeaders (v string) (string,string) { //parse header in stdin
 	//req.Header.Add(temp, htemp[1])
 }
 
-func parseurldir (urlz string) (string,string) { //parse url with single directory
+/*func parseurldir (urlz string) (string,string,error) { //parse url with single directory
+	fmt.Println("domain3.4	:",  urlz)
 	unparse,err := url.QueryUnescape(urlz)
+	fmt.Println("domain3.5	:",  unparse)
 	u,err := url.Parse(unparse)
-	
-	var dir,domain = "",""
-
-
+	fmt.Println("domain4	:",  u)
 	if err != nil {
-		fmt.Println("[-]error, something wrong when parsing the url : %s",err)
+		fmt.Println("[-] error, bad URL : %s",err)
 	}
-	
+
+	var dir,domain = "",""
+		
 	if u.Scheme == "" { //parsing when no http schema
 		u.Scheme = "https" 
-		x := strings.SplitAfterN(urlz,"/",2)
-		u.Host = x[0]
-		dir = x[1]
+		//fmt.Println("d1")
+		//x := strings.SplitAfterN(urlz,"/",2)
+		//fmt.Println("d2")
+		//u.Host = x[0]
+		//dir = x[1]
 		
 		domain = u.Scheme + "://" + u.Host
 		
@@ -161,41 +166,44 @@ func parseurldir (urlz string) (string,string) { //parse url with single directo
 	}
 
 
+	//fmt.Println(domain)
+	return domain,dir,nil
+}*/
 
-	return domain,dir
-}
-
-func parseurldirs (urlz string) (string,[]string) { //parse url with subdirectory
+func parseurldirs (urlz string) (string,[]string,error) { //parse url with subdirectory
 	unparse,err := url.QueryUnescape(urlz)
 	u,err := url.Parse(unparse)
 	
-	var temp,domain = "",""
+	if err != nil || u.Host == "" { // if got error/u.host none, possible ip addr
 
-	if err != nil {
-		fmt.Println("[-]error, something wrong when parsing the url in directory: %s",err)
+		u,err = url.Parse("//"+unparse) // //192.168.0.1 solve the parse() instead off 192.168.0.1 (without prefix double slash)
+		if err != nil {
+			fmt.Println("[-] error, bad URL :",err)
+		}
 	}
 	
+	var temp,domain = "",""
+	
+	//add http scheme if found none
 	if u.Scheme == "" { //parsing when no http schema
 		u.Scheme = "https" 
-		x := strings.SplitAfterN(urlz,"/",2)
-		u.Host = x[0]
-		temp = x[1]
-		domain = u.Scheme + "://" + u.Host
+		domain = u.Scheme + "://" + u.Host + "/"
 	
 	} else { //parsing when there's http schema
 		domain = u.Scheme + "://" + u.Host + "/"
-		temp = strings.Replace(u.Path,"/","",1)
+		
 	}
-
 	
-	dir := strings.Split(temp,"/")
+	temp = strings.Replace(u.Path,"/","",1) // put /dodol/garut to dodol/garut for easier split
+	dir := strings.Split(temp,"/") //put every dir/subdir to arracy
+	
 	
 	if dir[len(dir)-1] == "" {
 		dir = dir[:len(dir)-1]	
 	}
 	
-
-	return domain, dir
+	
+	return domain, dir,nil
 }
 
 func reqiterateheader(r rawconf,dir string,wg sync.WaitGroup,lol []string,i int) {
@@ -212,6 +220,7 @@ func reqiterateheader(r rawconf,dir string,wg sync.WaitGroup,lol []string,i int)
 func myrequest(r rawconf, dir string, before string, after string, wg *sync.WaitGroup) { //request engine
 
 	//prepare url
+	//fmt.Println("before process url : " + r.Url)
 	url := ""
 	if (before == "DOMAINMOD") { //url exception for bypass that modify domain
 		r.Url = r.Url[:len(r.Url)-1]
@@ -222,7 +231,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	} else {
 		url = r.Url+before+dir+after
 	}
-	
+	//fmt.Println("after process url : " + r.Url)
 	wg.Add(1)
 
 	//prepare request
@@ -233,6 +242,17 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 		fasthttp.ReleaseRequest(req)
 	}()
 	
+	//generate http clint (just to get InsecureSkipVerify)
+	//customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	//customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &fasthttp.Client{
+    		//CheckRedirect: func(req *http.Request, via []*http.Request) error {
+      		//	fmt.Println("LOL")
+      		//	return http.ErrUseLastResponse
+      		TLSConfig: &tls.Config{InsecureSkipVerify: true},
+  	} 
+
+
 	//set URL
 	req.SetRequestURI(url)
 
@@ -255,21 +275,26 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 	//do request, break if not timeout, still 
 	timeout := false
 	for true {
-		var err = fasthttp.DoTimeout(req, resp, tout)
+		//fmt.Println(req.URI())
+		var err = client.DoTimeout(req, resp, tout)
 		
 
 		//print error, code still redundant/inefficient
 		if err != nil {
 			
-			if err.Error() == "timeout" { 
 			r.Retnum--
+			if err.Error() == "timeout" { 
 				if r.Retnum == 0 {
-					//fmt.Printf("domain : %s |error : %s%s",url,err,"\n") //NEED TO ADD PADDING
+			
 					timeout = true //request is timeout
 					break
 				}
+			} else {
+				fmt.Println("[-] request error : ", err)
+				break
 			}
 		} else {
+			
 			break
 		}
 	}
@@ -350,7 +375,7 @@ func myrequest(r rawconf, dir string, before string, after string, wg *sync.Wait
 }
 
 
-func payloads(r rawconf, dir string) {
+func payloads(r rawconf, dir string) { //standard bypass module
  	var wg sync.WaitGroup
 	myrequest(r,dir,"","",&wg)
 	defer func(){
@@ -361,7 +386,8 @@ func payloads(r rawconf, dir string) {
 	
 	
 	//25 goroutine total
-	go myrequest(r,dir,"DOMAINMOD",".",&wg)
+
+	//match, _ := regexp.MatchString("'\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}\b'", )
 	go myrequest(r,dir,"","%2500",&wg)
 	go myrequest(r,dir,"","%20",&wg)
 	go myrequest(r,dir,"%2" + "e/","",&wg) 
@@ -385,6 +411,10 @@ func payloads(r rawconf, dir string) {
 	go myrequest(r,dir,"","/~",&wg)
 	go myrequest(r,dir,"./","",&wg)
 	
+	_,_,err := parseurldirs(r.Url)
+    if err == nil { //if err possible ip addr, domain bypass with . doesnt work and should fix dodol.com:443. to dodol.com.:443
+    	go myrequest(r,dir,"DOMAINMOD",".",&wg)	
+    }
 	if dir != "" {
 		go myrequest(r,firstchartoasciicode(dir),fmt.Sprintf("%s%s","DIRMOD",fmt.Sprintf(dir[:1])),"",&wg)	
 	}
@@ -420,8 +450,8 @@ func payloads(r rawconf, dir string) {
 	
 }
 
-func payloads2(r rawconf, dir string) {
-
+func payloads2(r rawconf, dir string) { //subdirectory bypass module
+	//fmt.Println("p2")
 	var wg sync.WaitGroup
  	
 	myrequest(r,dir,"","",&wg)
@@ -432,8 +462,6 @@ func payloads2(r rawconf, dir string) {
 		
 	}()
 	
-	
-	go myrequest(r,dir,"DOMAINMOD",".",&wg)
 	go myrequest(r,dir,"%2" + "e/","",&wg) 
 	go myrequest(r,dir,"","..;/",&wg) // LOOP?
 	go myrequest(r,dir,"..;/","",&wg) //and ../ LOOP? 
@@ -443,11 +471,15 @@ func payloads2(r rawconf, dir string) {
 	if dir != "" {
 		myrequest(r,firstchartoasciicode(dir),fmt.Sprintf("%s%s","DIRMOD",fmt.Sprintf(dir[:1])),"",&wg)	 //not in goroutine fo a nasty way to keep goroutine run w/o encountering race condition
 	}
+	_,_,err := parseurldirs(r.Url)
+	if err == nil { //if err possible ip addr, domain bypass with . doesnt work and should fix dodol.com:443. to dodol.com.:443
+    	myrequest(r,dir,"DOMAINMOD",".",&wg)	
+    }
 }
 
 
 
-func payloads3(r rawconf, dir string) { 
+func payloads3(r rawconf, dir string) { //header bypass module
 	
 	r.Xheaders = true
 	var wg sync.WaitGroup
@@ -505,6 +537,13 @@ func payloads3(r rawconf, dir string) {
 
 }
 
+/*func payload3wrapper(b bool,r rawconf, dir string) { 
+	if !(b){
+		payloads3(r,dir)
+	}
+}*/
+
+
 func main() {
 
     var r = rawconf{}
@@ -540,7 +579,7 @@ func main() {
     if r.Outname != "" {
 	    f,err := os.OpenFile(r.Outname,os.O_APPEND|os.O_WRONLY|os.O_CREATE,0644)
 	    if err != nil {
-	    	fmt.Printf("[-]create file error : ")
+	    	fmt.Printf("[-] create file error : ")
 	    	panic(err)
 	    	}
 	    r.Outfile = f
@@ -573,13 +612,13 @@ func main() {
 	    
 	    err := ioutil.WriteFile(tfile, d1, 0644) //need to change to random name
 	    if err != nil {
-			fmt.Println("[-]cannot create temp file")
+			fmt.Println("[-] cannot create temp file")
 			panic(err)
 		}
 	    
 	    g,err = os.Open(tfile) // iterate file lineByLine                                                     
 	    if err != nil {
-			fmt.Println("[-]cannot open temp file")
+			fmt.Println("[-] cannot open temp file")
 			panic(err)
 		}
 
@@ -589,26 +628,27 @@ func main() {
     	os.Exit(3)
     }
 
-
+    //url(s) to iteration
     for g2.Scan() {                                                                                              
         var line = g2.Text()	
         
 
 
-        domain,dirs := parseurldirs(line)
+        domain,dirs,_ := parseurldirs(line)
         
         //if based on number of directory
         if len(dirs) > 1 {
         	
         	last := dirs[len(dirs)-1]
-        	
+        	last2 := last
         	dirstemp := dirs[0:len(dirs)-1]
         	middle := strings.Join(dirstemp, "/")
         	
         	r.Url = domain  + middle + "/"
-        	payloads(r,last)
+        	fmt.Println(r.Url)
         	
-        	if !(r.Rec) {
+        	
+        	if !(r.Rec) {	        	
 	        	for i := 0; i < len(dirs)-1; i++ {   // -1 for keeptesting all level of directory excluding file destination      		
 	        		
 	        		middle = strings.Join(dirs[0:i], "/")
@@ -622,26 +662,28 @@ func main() {
 	        		payloads2(r,last)
 	        	}
         	}
-
-      		if !(r.Headby) {
-
-				//r.Url = r.Url[0:len(r.Url)-1]
-      			payloads3(r,last)
+        	
+        	payloads(r,last2)//-------|
+      		if !(r.Headby) {//        |-----need to go concurrent
+      			payloads3(r,last2)//--|
       		}
+      		
+      		
 
         } else {
-        	
-        	domain,dir := parseurldir(line)
-			
         	r.Url = domain
+        	dir := dirs[0]
         	
-        	payloads(r,dir)
         	
         	if !(r.Headby) {
-        		payloads3(r,dir)	
+        		payloads(r,dir)	//---|
+        		payloads3(r,dir)//---|--------need to go concurrent
+        	} else {
+        		payloads(r,dir)
         	}
         	
         }
+        
 
                          
 	}
