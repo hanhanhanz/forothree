@@ -18,7 +18,6 @@ import "github.com/dchest/uniuri"
 import "crypto/tls"
 
 
-
 //forothree v.0.1
 //created by hanhanhan
 
@@ -84,7 +83,7 @@ func strtoreversecase(s string) (string) { //change an alphabet to upper (if low
 	if s == "" {
 		return ""
 	}
-	slic := strings.Split(s,"")
+	slic := strings.Split(s,"") //every char = an array index
 	
 	for i := 0; i < len(slic)-1; i++ {        		
 		//slic := strings.Split(s,"")
@@ -118,7 +117,7 @@ func strtoreversecase(s string) (string) { //change an alphabet to upper (if low
 
 
 func strtoaciicode(s string, n int) (string) { //change a char number n in string to ascicode
-	slic := strings.Split(s,"")
+	slic := strings.Split(s,"") //every char = an array index
 	run := []rune(slic[n])
 	int := fmt.Sprintf("%%"+"%d",run) 
 	slic[n] = string(int)
@@ -193,9 +192,10 @@ func parseurldirs (urlz string) (string,[]string,error) { //parse url with subdi
 		domain = u.Scheme + "://" + u.Host + "/"
 		
 	}
-	
-	temp = strings.Replace(u.Path,"/","",1) // put /dodol/garut to dodol/garut for easier split
-	dir := strings.Split(temp,"/") //put every dir/subdir to arracy
+	temp = strings.Split(u.Path, "?")[0] //strip url parameters
+	temp = strings.Split(temp, "%3F")[0] //strip url parameters when ? is encoded
+	temp2 := strings.Replace(temp,"/","",1) // put /dodol/garut to dodol/garut for easier split
+	dir := strings.Split(temp2,"/") //put every dir/subdir to arracy
 	
 	
 	if dir[len(dir)-1] == "" {
@@ -640,16 +640,16 @@ func main() {
         if len(dirs) > 1 {
         	
         	last := dirs[len(dirs)-1]
-        	last2 := last
+        	//last2 := last
         	dirstemp := dirs[0:len(dirs)-1]
         	middle := strings.Join(dirstemp, "/")
         	
         	r.Url = domain  + middle + "/"
-        	fmt.Println(r.Url)
+        	
         	
         	
         	if !(r.Rec) {	        	
-	        	for i := 0; i < len(dirs)-1; i++ {   // -1 for keeptesting all level of directory excluding file destination      		
+	        	for i := 0; i < len(dirs); i++ {   // len(dirs)-1 for keeptesting all level of directory excluding file destination      		
 	        		
 	        		middle = strings.Join(dirs[0:i], "/")
 	        		last = strings.Join(dirs[i:len(dirs)], "/") //?
@@ -659,9 +659,12 @@ func main() {
 	        		} else {
 	        			r.Url = domain  + middle + "/"	
 	        		}
+	        		
 	        		payloads2(r,last)
 	        	}
         	}
+        	//fmt.Println(dirs)
+        	last2 := strings.Join(dirs, "/")
         	
         	payloads(r,last2)//-------|
       		if !(r.Headby) {//        |-----need to go concurrent
